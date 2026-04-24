@@ -3,17 +3,21 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { MoonLogo } from "@/components/MoonLogo";
 import { usePrivy } from "@/hooks/usePrivy";
 import { PrivacyBadge } from "@/components/PrivacyBadge";
 
+type Mode = "signin" | "signup";
+
 export default function Auth() {
   const navigate = useNavigate();
   const { initPrivySession } = usePrivy();
+  const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
-  const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -33,29 +37,32 @@ export default function Auth() {
     return () => sub.subscription.unsubscribe();
   }, [navigate, initPrivySession]);
 
-  async function sendMagicLink(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email) return;
-    setSending(true);
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${window.location.origin}/chat` },
-    });
-    setSending(false);
-    if (error) {
-      toast({ title: "Couldn't send link", description: error.message, variant: "destructive" });
-      return;
-    }
-    setSent(true);
-  }
-
-  async function signInWithGoogle() {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/chat` },
-    });
-    if (error) {
-      toast({ title: "Google sign-in failed", description: error.message, variant: "destructive" });
+    if (!email || !password) return;
+    setSubmitting(true);
+    try {
+      if (mode === "signup") {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: `${window.location.origin}/chat` },
+        });
+        if (error) throw error;
+        toast({
+          title: "Account created",
+          description: "Check your inbox to confirm your email, then sign in.",
+        });
+        setMode("signin");
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Please try again.";
+      toast({ title: "Authentication failed", description: msg, variant: "destructive" });
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -72,51 +79,55 @@ export default function Auth() {
           Anonymous. Encrypted. Yours alone.
         </p>
 
-        {sent ? (
-          <div className="mt-10 rounded-2xl bg-card p-6 shadow-soft border border-border">
-            <p className="text-sm text-card-foreground">
-              Check your inbox at <span className="font-medium">{email}</span> for a sign-in link.
-            </p>
+        <form onSubmit={onSubmit} className="mt-10 space-y-4 text-left">
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-sm text-muted-foreground">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              required
+              autoComplete="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="h-12 rounded-2xl bg-card border-border text-foreground placeholder:text-muted-foreground"
+            />
           </div>
-        ) : (
-          <div className="mt-10 space-y-3">
-            <form onSubmit={sendMagicLink} className="space-y-3">
-              <Input
-                type="email"
-                required
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="h-12 rounded-2xl bg-card border-border text-foreground placeholder:text-muted-foreground"
-              />
-              <Button
-                type="submit"
-                disabled={sending}
-                className="w-full h-12 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
-              >
-                {sending ? "Sending…" : "Send magic link"}
-              </Button>
-            </form>
-
-            <div className="flex items-center gap-3 my-2">
-              <div className="h-px flex-1 bg-border" />
-              <span className="text-xs text-muted-foreground">or</span>
-              <div className="h-px flex-1 bg-border" />
-            </div>
-
-            <Button
-              type="button"
-              variant="outline"
-              onClick={signInWithGoogle}
-              className="w-full h-12 rounded-2xl bg-card border-border text-card-foreground hover:bg-secondary"
-            >
-              Continue with Google
-            </Button>
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-sm text-muted-foreground">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              required
+              minLength={6}
+              autoComplete={mode === "signup" ? "new-password" : "current-password"}
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="h-12 rounded-2xl bg-card border-border text-foreground placeholder:text-muted-foreground"
+            />
           </div>
-        )}
+          <Button
+            type="submit"
+            disabled={submitting}
+            className="w-full h-12 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
+          >
+            {submitting ? "Please wait…" : mode === "signup" ? "Create account" : "Sign in"}
+          </Button>
+        </form>
 
-        <p className="mt-8 text-xs text-muted-foreground">
-          No passwords. No tracking. Your conversations are end-to-end encrypted.
+        <button
+          type="button"
+          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+          className="mt-6 text-sm text-muted-foreground hover:text-foreground transition"
+        >
+          {mode === "signin"
+            ? "New here? Create an account"
+            : "Already have an account? Sign in"}
+        </button>
+
+        <p className="mt-6 text-xs text-muted-foreground">
+          Your conversations are end-to-end encrypted. Only you can read them.
         </p>
       </div>
 
