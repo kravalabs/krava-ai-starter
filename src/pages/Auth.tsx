@@ -49,11 +49,8 @@ export default function Auth() {
           options: { emailRedirectTo: `${window.location.origin}/chat` },
         });
         if (error) throw error;
-        toast({
-          title: "Account created",
-          description: "Check your inbox to confirm your email, then sign in.",
-        });
-        setMode("signin");
+        // Auto-confirm is on, so the user is signed in immediately.
+        // onAuthStateChange will navigate to /chat.
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
