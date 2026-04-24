@@ -6,36 +6,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { MoonLogo } from "@/components/MoonLogo";
-import { usePrivy } from "@/hooks/usePrivy";
 import { PrivacyBadge } from "@/components/PrivacyBadge";
 
 type Mode = "signin" | "signup";
 
 export default function Auth() {
   const navigate = useNavigate();
-  const { initPrivySession } = usePrivy();
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
-        try {
-          await initPrivySession();
-          navigate("/chat", { replace: true });
-        } catch (e) {
-          console.error(e);
-          toast({ title: "Could not start your private session", variant: "destructive" });
-        }
+        navigate("/chat", { replace: true });
       }
     });
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) navigate("/chat", { replace: true });
     });
     return () => sub.subscription.unsubscribe();
-  }, [navigate, initPrivySession]);
+  }, [navigate]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
