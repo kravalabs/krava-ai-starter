@@ -102,8 +102,9 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
         { gatewayToken: creds.gatewayToken, signal },
       );
       for await (const event of parseAgentChatStream(res)) {
-        if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
-          onChunk(event.delta.text);
+        const e = event as { type?: string; delta?: { type?: string; text?: string } };
+        if (e.type === "content_block_delta" && e.delta?.type === "text_delta" && typeof e.delta.text === "string") {
+          onChunk(e.delta.text);
         }
       }
     },
