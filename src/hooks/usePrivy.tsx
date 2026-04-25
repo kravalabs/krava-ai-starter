@@ -89,7 +89,13 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
             const evt = JSON.parse(payload) as {
               type?: string;
               delta?: { type?: string; text?: string };
+              choices?: Array<{ delta?: { content?: string } }>;
             };
+            const openAiChunk = evt.choices?.[0]?.delta?.content;
+            if (typeof openAiChunk === "string") {
+              onChunk(openAiChunk);
+              continue;
+            }
             if (
               evt.type === "content_block_delta" &&
               evt.delta?.type === "text_delta" &&
