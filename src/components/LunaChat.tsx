@@ -180,7 +180,6 @@ export default function LunaChat() {
         </DialogContent>
       </Dialog>
 
-      <PrivacyBadge />
     </div>
   );
 }
