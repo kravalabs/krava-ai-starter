@@ -1,13 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import { createPrivyPlatformClient, createPrivyClient } from "npm:@privyai/api-client@0.1.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
-
-const PRIVY_BASE_URL = "https://privyai.ch";
+const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -30,7 +28,10 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } },
     );
 
-    const { data: { user }, error: userErr } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: userErr,
+    } = await supabase.auth.getUser();
     if (userErr || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -38,17 +39,22 @@ Deno.serve(async (req) => {
       });
     }
 
-    const appKey = Deno.env.get("PRIVY_APP_KEY");
-    if (!appKey) {
-      return new Response(JSON.stringify({ error: "PRIVY_APP_KEY missing" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+    if (!lovableApiKey) {
+      return new Response(
+        JSON.stringify({ error: "AI gateway is not configured" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
-    const body = await req.json().catch(() => null) as
-      | { messages?: Array<{ role: "user" | "assistant"; content: string }>; system?: string; model?: string }
-      | null;
+    const body = (await req.json().catch(() => null)) as {
+      messages?: Array<{ role: "user" | "assistant"; content: string }>;
+      system?: string;
+      model?: string;
+    } | null;
     if (!body?.messages || !Array.isArray(body.messages)) {
       return new Response(JSON.stringify({ error: "Invalid request body" }), {
         status: 400,
@@ -56,45 +62,39 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Mint a fresh Privy user token, then verify this user has an active Privy agent.
-    const platform = createPrivyPlatformClient({ baseUrl: PRIVY_BASE_URL, appKey });
-    const { userToken } = await platform.users.getOrCreate(user.id);
-
-    const client = createPrivyClient({ baseUrl: PRIVY_BASE_URL, getToken: () => userToken });
-    const agentStatus = await client.agent.getStatus();
-
-    if (agentStatus.status === "none") {
-      console.error("Privy chat unavailable: no active agent", { userId: user.id });
-      return new Response(
-        JSON.stringify({
-          error: "Luna is not ready yet for this account. Please try again in a moment.",
-        }),
-        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
-    const creds = await client.agent.getGatewayCredentials();
-
-    const upstream = await client.v1.agentChat(
-      {
-        model: body.model ?? "claude-sonnet-4-6-20250514",
-        system: body.system ??
-          "You are Luna, a warm and knowledgeable pregnancy companion. " +
-          "You help expecting parents with nutrition, emotional support, symptom questions, and birth preparation. " +
-          "Be warm, reassuring, and evidence-based. Never alarmist. " +
-          "Always recommend consulting a healthcare provider for medical decisions.",
-        messages: body.messages,
-        stream: true,
+    const upstream = await fetch(LOVABLE_AI_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${lovableApiKey}`,
+        "Content-Type": "application/json",
       },
-      { gatewayToken: creds.gatewayToken },
-    );
+      body: JSON.stringify({
+        model: body.model ?? "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "system",
+            content:
+              body.system ??
+              "You are Luna, a warm and knowledgeable pregnancy companion. " +
+                "You help expecting parents with nutrition, emotional support, symptom questions, and birth preparation. " +
+                "Be warm, reassuring, and evidence-based. Never alarmist. " +
+                "Always recommend consulting a healthcare provider for medical decisions.",
+          },
+          ...body.messages,
+        ],
+        stream: true,
+      }),
+    });
 
     if (!upstream.ok || !upstream.body) {
       const text = await upstream.text().catch(() => "");
-      console.error("Privy chat failed", upstream.status, text);
+      console.error("Luna AI gateway failed", upstream.status, text);
       return new Response(
-        JSON.stringify({ error: `Privy responded ${upstream.status}` }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        JSON.stringify({ error: "Luna couldn't respond. Please try again." }),
+        {
+          status: 502,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
       );
     }
 
@@ -102,7 +102,8 @@ Deno.serve(async (req) => {
     return new Response(upstream.body, {
       headers: {
         ...corsHeaders,
-        "Content-Type": upstream.headers.get("content-type") ?? "text/event-stream",
+        "Content-Type":
+          upstream.headers.get("content-type") ?? "text/event-stream",
         "Cache-Control": "no-cache, no-transform",
         "X-Accel-Buffering": "no",
       },
@@ -110,9 +111,9 @@ Deno.serve(async (req) => {
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown";
     console.error("privy-chat error", e);
-    return new Response(
-      JSON.stringify({ error: message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });

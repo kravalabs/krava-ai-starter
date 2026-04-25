@@ -1,4 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
@@ -6,7 +13,11 @@ type ChatMessage = { role: "user" | "assistant"; content: string };
 type PrivyContextValue = {
   ready: boolean;
   authed: boolean;
-  sendMessage: (messages: ChatMessage[], onChunk: (text: string) => void, signal?: AbortSignal) => Promise<void>;
+  sendMessage: (
+    messages: ChatMessage[],
+    onChunk: (text: string) => void,
+    signal?: AbortSignal,
+  ) => Promise<void>;
   burnAllData: () => Promise<void>;
 };
 
@@ -33,8 +44,14 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const sendMessage = useCallback(
-    async (messages: ChatMessage[], onChunk: (text: string) => void, signal?: AbortSignal) => {
-      const { data: { session } } = await supabase.auth.getSession();
+    async (
+      messages: ChatMessage[],
+      onChunk: (text: string) => void,
+      signal?: AbortSignal,
+    ) => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const accessToken = session?.access_token;
       if (!accessToken) throw new Error("Not signed in");
 
@@ -89,7 +106,13 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
             const evt = JSON.parse(payload) as {
               type?: string;
               delta?: { type?: string; text?: string };
+              choices?: Array<{ delta?: { content?: string } }>;
             };
+            const openAiChunk = evt.choices?.[0]?.delta?.content;
+            if (typeof openAiChunk === "string") {
+              onChunk(openAiChunk);
+              continue;
+            }
             if (
               evt.type === "content_block_delta" &&
               evt.delta?.type === "text_delta" &&
@@ -107,14 +130,19 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
   );
 
   const burnAllData = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     const accessToken = session?.access_token;
     if (accessToken) {
       try {
-        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/privy-burn`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
+        await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/privy-burn`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${accessToken}` },
+          },
+        );
       } catch (e) {
         console.error("burn failed", e);
       }
