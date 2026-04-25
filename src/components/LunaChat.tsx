@@ -137,7 +137,34 @@ export default function LunaChat() {
       </div>
 
       <div className="border-t border-border/60 bg-background/60 backdrop-blur px-4 sm:px-6 py-4">
-        <div className="mx-auto max-w-2xl flex items-end gap-2">
+        <div className="mx-auto max-w-2xl space-y-2">
+          <div className="flex items-center gap-1 p-1 rounded-full bg-muted/60 w-fit text-xs">
+            <button
+              type="button"
+              onClick={() => setProvider("gemini")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition ${
+                provider === "gemini"
+                  ? "bg-background shadow-sm text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Bot className="h-3.5 w-3.5" />
+              Gemini
+            </button>
+            <button
+              type="button"
+              onClick={() => setProvider("privy")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition ${
+                provider === "privy"
+                  ? "bg-background shadow-sm text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Lock className="h-3.5 w-3.5" />
+              Privy AI
+            </button>
+          </div>
+          <div className="flex items-end gap-2">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -154,6 +181,7 @@ export default function LunaChat() {
           >
             <Send className="h-5 w-5" />
           </Button>
+          </div>
         </div>
       </div>
 
