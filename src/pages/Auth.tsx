@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { MoonLogo } from "@/components/MoonLogo";
-import { PrivacyBadge } from "@/components/PrivacyBadge";
 
 type Mode = "signin" | "signup";
 
