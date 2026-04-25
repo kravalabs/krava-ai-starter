@@ -51,7 +51,18 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
 
       if (!res.ok || !res.body) {
         const text = await res.text().catch(() => "");
-        throw new Error(text || `Chat failed (${res.status})`);
+        let message = text;
+
+        try {
+          const parsed = JSON.parse(text) as { error?: string };
+          if (typeof parsed.error === "string") {
+            message = parsed.error;
+          }
+        } catch {
+          /* keep plain text */
+        }
+
+        throw new Error(message || `Chat failed (${res.status})`);
       }
 
       // Parse SSE stream from Privy proxied through our edge function.
