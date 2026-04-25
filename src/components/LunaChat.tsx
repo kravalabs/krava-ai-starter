@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Flame, Send } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Flame, Send, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -12,8 +12,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { MoonLogo } from "@/components/MoonLogo";
 import { usePrivy } from "@/hooks/usePrivy";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { AppFooter } from "@/components/layout/AppFooter";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -90,36 +91,37 @@ export default function LunaChat() {
   }
 
   return (
-    <div className="flex flex-col h-[100dvh]">
-      <header className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-border/60 backdrop-blur bg-background/40 sticky top-0 z-30">
-        <div className="flex items-center gap-3">
-          <MoonLogo className="h-9 w-9" />
-          <div>
-            <h1 className="text-lg font-semibold leading-none">Luna</h1>
-            <p className="text-xs text-muted-foreground mt-1">Your pregnancy companion</p>
-          </div>
-        </div>
-        <button
-          onClick={() => setBurnOpen(true)}
-          className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition"
-          aria-label="Burn all data"
-        >
-          <Flame className="h-4 w-4" />
-          Burn
-        </button>
-      </header>
+    <div className="flex flex-col min-h-[100dvh]">
+      <AppHeader onBurn={() => setBurnOpen(true)} />
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
         <div className="mx-auto max-w-2xl space-y-4">
           {messages.length === 0 && (
-            <div className="rounded-3xl bubble-luna p-6 shadow-bubble">
-              <p className="text-base leading-relaxed">
-                Hi, I&apos;m Luna 🌙 — your private pregnancy companion. How far along are you?
-              </p>
-              <p className="mt-3 text-xs text-muted-foreground">
-                Your conversations are end-to-end encrypted. Only you can read them.
-              </p>
-            </div>
+            <>
+              <div className="rounded-3xl bubble-luna p-6 shadow-bubble">
+                <p className="text-base leading-relaxed">
+                  Hi, I&apos;m Luna 🌙 — your private pregnancy companion. How far along are you?
+                </p>
+              </div>
+              <Link
+                to="/research"
+                className="shimmer-border block rounded-3xl p-[1px] group"
+              >
+                <div className="rounded-[calc(theme(borderRadius.3xl)-1px)] bg-card/80 backdrop-blur p-5 flex items-start gap-4">
+                  <div className="h-10 w-10 rounded-2xl gemini-gradient flex items-center justify-center shrink-0">
+                    <Sparkles className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold">
+                      <span className="gemini-text">Research AI Companion</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Cited, evidence-based answers from OpenEvidence, PubMed, ACOG, NICE & more.
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            </>
           )}
 
           {messages.map((m, i) => (
@@ -132,7 +134,7 @@ export default function LunaChat() {
         </div>
       </div>
 
-      <div className="border-t border-border/60 bg-background/60 backdrop-blur px-4 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div className="border-t border-border/60 bg-background/60 backdrop-blur px-4 sm:px-6 py-4">
         <div className="mx-auto max-w-2xl flex items-end gap-2">
           <Textarea
             value={input}
@@ -180,6 +182,7 @@ export default function LunaChat() {
         </DialogContent>
       </Dialog>
 
+      <AppFooter />
     </div>
   );
 }
