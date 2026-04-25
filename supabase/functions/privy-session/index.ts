@@ -104,7 +104,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log("[privy-session] requesting userToken for", user.id);
+    console.log("[privy-session] requesting userToken for", user.id,
+      "appKey len:", appKey.length, "prefix:", appKey.slice(0, 6));
+    const t0 = Date.now();
     const upstream = await fetch(PRIVY_USERS_URL, {
       method: "POST",
       headers: {
@@ -115,6 +117,9 @@ Deno.serve(async (req) => {
     });
 
     const text = await upstream.text();
+    console.log("[privy-session] upstream status", upstream.status,
+      "ms:", Date.now() - t0,
+      "bodyPreview:", text.slice(0, 300));
     if (!upstream.ok) {
       console.error("[privy-session] upstream error", upstream.status, text);
       return new Response(
