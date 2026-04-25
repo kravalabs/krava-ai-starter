@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { MoonLogo } from "@/components/MoonLogo";
-import { PrivacyBadge } from "@/components/PrivacyBadge";
 import { usePrivy } from "@/hooks/usePrivy";
 
 type Msg = { role: "user" | "assistant"; content: string };
@@ -181,7 +180,6 @@ export default function LunaChat() {
         </DialogContent>
       </Dialog>
 
-      <PrivacyBadge />
     </div>
   );
 }
