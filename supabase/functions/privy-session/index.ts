@@ -53,16 +53,39 @@ Deno.serve(async (req) => {
       );
     }
 
+    console.log("[privy-session] appKey length", appKey.length, "prefix", appKey.slice(0, 6));
     const platform = createPrivyPlatformClient({
       baseUrl: PRIVY_BASE_URL,
       appKey,
     });
 
-    const { userToken } = await platform.users.getOrCreate(user.id);
-
-    return new Response(JSON.stringify({ userToken }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    try {
+      const { userToken } = await platform.users.getOrCreate(user.id);
+      console.log("[privy-session] success userToken length", userToken?.length);
+      return new Response(JSON.stringify({ userToken }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    } catch (sdkErr) {
+      const anyErr = sdkErr as { name?: string; message?: string; status?: number; body?: unknown; cause?: unknown };
+      console.error("[privy-session] SDK error", {
+        name: anyErr?.name,
+        message: anyErr?.message,
+        status: anyErr?.status,
+        body: anyErr?.body,
+        cause: anyErr?.cause,
+      });
+      return new Response(
+        JSON.stringify({
+          error: anyErr?.message ?? "Privy SDK call failed",
+          status: anyErr?.status,
+          body: anyErr?.body,
+        }),
+        {
+          status: 502,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
   } catch (e) {
     console.error("privy-session error", e);
     return new Response(
