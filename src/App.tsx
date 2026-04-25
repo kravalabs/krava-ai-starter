@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { PrivyProvider } from "@/hooks/usePrivy";
 import Auth from "./pages/Auth.tsx";
 import ChatPage from "./pages/Chat.tsx";
+import Research from "./pages/Research.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -20,6 +21,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Auth />} />
             <Route path="/chat" element={<ChatPage />} />
+            <Route path="/research" element={<Research />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
