@@ -7,6 +7,7 @@ import { PrivyProvider } from "@/hooks/usePrivy";
 import Auth from "./pages/Auth.tsx";
 import ChatPage from "./pages/Chat.tsx";
 import Research from "./pages/Research.tsx";
+import Landing from "./pages/Landing.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -19,7 +20,8 @@ const App = () => (
       <BrowserRouter>
         <PrivyProvider>
           <Routes>
-            <Route path="/" element={<Auth />} />
+            <Route path="/" element={<Landing />} />
+            <Route path="/auth" element={<Auth />} />
             <Route path="/chat" element={<ChatPage />} />
             <Route path="/research" element={<Research />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
