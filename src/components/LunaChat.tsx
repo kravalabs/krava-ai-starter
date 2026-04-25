@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Flame, Send, Sparkles } from "lucide-react";
+import { Flame, Send, Sparkles, Lock, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { usePrivy } from "@/hooks/usePrivy";
+import { usePrivy, type ChatProvider } from "@/hooks/usePrivy";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
 import { Markdown } from "@/components/Markdown";
@@ -29,6 +29,7 @@ export default function LunaChat() {
   const [currentStream, setCurrentStream] = useState("");
   const [burnOpen, setBurnOpen] = useState(false);
   const [burning, setBurning] = useState(false);
+  const [provider, setProvider] = useState<ChatProvider>("gemini");
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -51,7 +52,7 @@ export default function LunaChat() {
       await sendMessage(next, (chunk) => {
         accumulated += chunk;
         setCurrentStream(accumulated);
-      });
+      }, undefined, provider);
       setMessages((prev) => [...prev, { role: "assistant", content: accumulated }]);
     } catch (e) {
       console.error(e);
