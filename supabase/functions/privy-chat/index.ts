@@ -7,7 +7,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const PRIVY_BASE_URL = "https://www.privyai.ch";
+const PRIVY_BASE_URL = "https://privyai.ch";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -56,11 +56,23 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Mint a fresh Privy user token, then a gateway token for this chat call.
+    // Mint a fresh Privy user token, then verify this user has an active Privy agent.
     const platform = createPrivyPlatformClient({ baseUrl: PRIVY_BASE_URL, appKey });
     const { userToken } = await platform.users.getOrCreate(user.id);
 
     const client = createPrivyClient({ baseUrl: PRIVY_BASE_URL, getToken: () => userToken });
+    const agentStatus = await client.agent.getStatus();
+
+    if (agentStatus.status === "none") {
+      console.error("Privy chat unavailable: no active agent", { userId: user.id });
+      return new Response(
+        JSON.stringify({
+          error: "Luna is not ready yet for this account. Please try again in a moment.",
+        }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const creds = await client.agent.getGatewayCredentials();
 
     const upstream = await client.v1.agentChat(
@@ -96,9 +108,10 @@ Deno.serve(async (req) => {
       },
     });
   } catch (e) {
+    const message = e instanceof Error ? e.message : "Unknown";
     console.error("privy-chat error", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown" }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
