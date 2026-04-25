@@ -9,6 +9,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
+export type ChatProvider = "gemini" | "privy";
 
 type PrivyContextValue = {
   ready: boolean;
@@ -17,6 +18,7 @@ type PrivyContextValue = {
     messages: ChatMessage[],
     onChunk: (text: string) => void,
     signal?: AbortSignal,
+    provider?: ChatProvider,
   ) => Promise<void>;
   burnAllData: () => Promise<void>;
 };
@@ -26,6 +28,8 @@ const PrivyContext = createContext<PrivyContextValue | null>(null);
 export function PrivyProvider({ children }: { children: ReactNode }) {
   const [authed, setAuthed] = useState(false);
   const [ready, setReady] = useState(false);
+  const [privyToken, setPrivyToken] = useState<string | null>(null);
+  const [privyChatId, setPrivyChatId] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -48,12 +52,32 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
       messages: ChatMessage[],
       onChunk: (text: string) => void,
       signal?: AbortSignal,
+      provider: ChatProvider = "gemini",
     ) => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
       const accessToken = session?.access_token;
       if (!accessToken) throw new Error("Not signed in");
+
+      let userToken: string | null = privyToken;
+      if (provider === "privy" && !userToken) {
+        const sessRes = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/privy-session`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${accessToken}` },
+          },
+        );
+        if (!sessRes.ok) {
+          const t = await sessRes.text().catch(() => "");
+          throw new Error(t || "Failed to create Privy session");
+        }
+        const j = (await sessRes.json()) as { userToken?: string };
+        if (!j.userToken) throw new Error("Privy session missing userToken");
+        userToken = j.userToken;
+        setPrivyToken(userToken);
+      }
 
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/privy-chat`;
       const res = await fetch(url, {
@@ -62,7 +86,13 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ messages }),
+        body: JSON.stringify({
+          messages,
+          provider,
+          ...(provider === "privy"
+            ? { userToken, chatId: privyChatId ?? undefined }
+            : {}),
+        }),
         signal,
       });
 
@@ -107,7 +137,14 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
               type?: string;
               delta?: { type?: string; text?: string };
               choices?: Array<{ delta?: { content?: string } }>;
+              text?: string;
+              chatId?: string;
             };
+            if (provider === "privy") {
+              if (typeof evt.chatId === "string") setPrivyChatId(evt.chatId);
+              if (typeof evt.text === "string") onChunk(evt.text);
+              continue;
+            }
             const openAiChunk = evt.choices?.[0]?.delta?.content;
             if (typeof openAiChunk === "string") {
               onChunk(openAiChunk);
@@ -126,7 +163,7 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
         }
       }
     },
-    [],
+    [privyToken, privyChatId],
   );
 
   const burnAllData = useCallback(async () => {
@@ -148,6 +185,8 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
       }
     }
     await supabase.auth.signOut();
+    setPrivyToken(null);
+    setPrivyChatId(null);
   }, []);
 
   return (

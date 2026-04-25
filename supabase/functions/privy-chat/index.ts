@@ -6,6 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const PRIVY_CHAT_URL = "https://privyai.ch/api/platform/chat";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -39,6 +40,67 @@ Deno.serve(async (req) => {
       });
     }
 
+    const body = (await req.json().catch(() => null)) as {
+      messages?: Array<{ role: "user" | "assistant"; content: string }>;
+      system?: string;
+      model?: string;
+      provider?: "gemini" | "privy";
+      userToken?: string;
+      chatId?: string;
+    } | null;
+    if (!body?.messages || !Array.isArray(body.messages)) {
+      return new Response(JSON.stringify({ error: "Invalid request body" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ---- Privy provider ----
+    if (body.provider === "privy") {
+      if (!body.userToken) {
+        return new Response(JSON.stringify({ error: "Missing Privy userToken" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const lastUser = [...body.messages].reverse().find((m) => m.role === "user");
+      if (!lastUser) {
+        return new Response(JSON.stringify({ error: "No user message" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const privyRes = await fetch(PRIVY_CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${body.userToken}`,
+        },
+        body: JSON.stringify({
+          message: lastUser.content,
+          ...(body.chatId ? { chatId: body.chatId } : {}),
+        }),
+      });
+      if (!privyRes.ok || !privyRes.body) {
+        const t = await privyRes.text().catch(() => "");
+        console.error("Privy chat failed", privyRes.status, t);
+        return new Response(
+          JSON.stringify({ error: "Privy chat failed", status: privyRes.status, body: t }),
+          { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      return new Response(privyRes.body, {
+        headers: {
+          ...corsHeaders,
+          "Content-Type":
+            privyRes.headers.get("content-type") ?? "text/event-stream",
+          "Cache-Control": "no-cache, no-transform",
+          "X-Accel-Buffering": "no",
+        },
+      });
+    }
+
+    // ---- Gemini (default) ----
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!lovableApiKey) {
       return new Response(
@@ -48,18 +110,6 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );
-    }
-
-    const body = (await req.json().catch(() => null)) as {
-      messages?: Array<{ role: "user" | "assistant"; content: string }>;
-      system?: string;
-      model?: string;
-    } | null;
-    if (!body?.messages || !Array.isArray(body.messages)) {
-      return new Response(JSON.stringify({ error: "Invalid request body" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
     }
 
     const upstream = await fetch(LOVABLE_AI_URL, {

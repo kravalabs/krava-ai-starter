@@ -1,5 +1,4 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import { createPrivyPlatformClient } from "npm:@privyai/api-client@0.1.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const PRIVY_BASE_URL = "https://privyai.ch";
+const PRIVY_USERS_URL = "https://privyai.ch/api/platform/users";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -53,39 +52,40 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log("[privy-session] appKey length", appKey.length, "prefix", appKey.slice(0, 6));
-    const platform = createPrivyPlatformClient({
-      baseUrl: PRIVY_BASE_URL,
-      appKey,
+    console.log("[privy-session] requesting userToken for", user.id);
+    const upstream = await fetch(PRIVY_USERS_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${appKey}`,
+      },
+      body: JSON.stringify({ externalUserId: user.id }),
     });
 
-    try {
-      const { userToken } = await platform.users.getOrCreate(user.id);
-      console.log("[privy-session] success userToken length", userToken?.length);
-      return new Response(JSON.stringify({ userToken }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    } catch (sdkErr) {
-      const anyErr = sdkErr as { name?: string; message?: string; status?: number; body?: unknown; cause?: unknown };
-      console.error("[privy-session] SDK error", {
-        name: anyErr?.name,
-        message: anyErr?.message,
-        status: anyErr?.status,
-        body: anyErr?.body,
-        cause: anyErr?.cause,
-      });
+    const text = await upstream.text();
+    if (!upstream.ok) {
+      console.error("[privy-session] upstream error", upstream.status, text);
       return new Response(
-        JSON.stringify({
-          error: anyErr?.message ?? "Privy SDK call failed",
-          status: anyErr?.status,
-          body: anyErr?.body,
-        }),
-        {
-          status: 502,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
+        JSON.stringify({ error: "Privy session failed", status: upstream.status, body: text }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+
+    let userToken: string | undefined;
+    try {
+      userToken = (JSON.parse(text) as { userToken?: string }).userToken;
+    } catch {
+      /* ignore */
+    }
+    if (!userToken) {
+      return new Response(
+        JSON.stringify({ error: "Privy did not return userToken", body: text }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    return new Response(JSON.stringify({ userToken }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (e) {
     console.error("privy-session error", e);
     return new Response(
