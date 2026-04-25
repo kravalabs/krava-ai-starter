@@ -13,6 +13,58 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // ---- DEBUG MODE: GET /privy-session?debug=1 ----
+  // Verifies PRIVY_APP_KEY against Privy's /users endpoint without requiring
+  // a Supabase session. Returns full upstream status + body for inspection.
+  const url = new URL(req.url);
+  if (req.method === "GET" && url.searchParams.get("debug") === "1") {
+    const appKey = Deno.env.get("PRIVY_APP_KEY");
+    console.log("[privy-session][debug] PRIVY_APP_KEY present:", !!appKey,
+      "length:", appKey?.length ?? 0,
+      "prefix:", appKey ? appKey.slice(0, 6) + "…" : "n/a");
+    if (!appKey) {
+      return new Response(JSON.stringify({ ok: false, error: "PRIVY_APP_KEY not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const externalUserId = url.searchParams.get("externalUserId") ?? "debug-ping-user";
+    const t0 = Date.now();
+    let upstream: Response;
+    try {
+      upstream = await fetch(PRIVY_USERS_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${appKey}` },
+        body: JSON.stringify({ externalUserId }),
+      });
+    } catch (e) {
+      console.error("[privy-session][debug] fetch threw", e);
+      return new Response(JSON.stringify({ ok: false, stage: "fetch", error: String(e) }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const body = await upstream.text();
+    const ms = Date.now() - t0;
+    const respHeaders: Record<string, string> = {};
+    upstream.headers.forEach((v, k) => { respHeaders[k] = v; });
+    console.log("[privy-session][debug] upstream", upstream.status, ms + "ms",
+      "headers:", JSON.stringify(respHeaders),
+      "bodyPreview:", body.slice(0, 500));
+    let parsed: unknown;
+    try { parsed = JSON.parse(body); } catch { parsed = null; }
+    return new Response(JSON.stringify({
+      ok: upstream.ok,
+      url: PRIVY_USERS_URL,
+      externalUserId,
+      appKeyLength: appKey.length,
+      appKeyPrefix: appKey.slice(0, 6),
+      upstreamStatus: upstream.status,
+      upstreamHeaders: respHeaders,
+      upstreamBody: parsed ?? body,
+      durationMs: ms,
+    }, null, 2), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
