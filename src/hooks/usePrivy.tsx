@@ -113,6 +113,7 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
       }
 
       // Parse SSE stream from Privy proxied through our edge function.
+      let privyGotText = false;
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
@@ -142,7 +143,10 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
             };
             if (provider === "privy") {
               if (typeof evt.chatId === "string") setPrivyChatId(evt.chatId);
-              if (typeof evt.text === "string") onChunk(evt.text);
+              if (typeof evt.text === "string") {
+                privyGotText = true;
+                onChunk(evt.text);
+              }
               continue;
             }
             const openAiChunk = evt.choices?.[0]?.delta?.content;
@@ -161,6 +165,12 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
             /* ignore non-JSON event */
           }
         }
+      }
+      if (provider === "privy" && !privyGotText) {
+        throw new Error(
+          "Privy AI accepted the request but returned no text. " +
+            "This is an upstream issue with privyai.ch — try Gemini instead.",
+        );
       }
     },
     [privyToken, privyChatId],
