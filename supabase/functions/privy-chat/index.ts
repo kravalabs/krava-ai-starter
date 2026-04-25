@@ -28,7 +28,10 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } },
     );
 
-    const { data: { user }, error: userErr } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: userErr,
+    } = await supabase.auth.getUser();
     if (userErr || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -38,15 +41,20 @@ Deno.serve(async (req) => {
 
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!lovableApiKey) {
-      return new Response(JSON.stringify({ error: "AI gateway is not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "AI gateway is not configured" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
-    const body = await req.json().catch(() => null) as
-      | { messages?: Array<{ role: "user" | "assistant"; content: string }>; system?: string; model?: string }
-      | null;
+    const body = (await req.json().catch(() => null)) as {
+      messages?: Array<{ role: "user" | "assistant"; content: string }>;
+      system?: string;
+      model?: string;
+    } | null;
     if (!body?.messages || !Array.isArray(body.messages)) {
       return new Response(JSON.stringify({ error: "Invalid request body" }), {
         status: 400,
@@ -65,11 +73,12 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: body.system ??
-          "You are Luna, a warm and knowledgeable pregnancy companion. " +
-          "You help expecting parents with nutrition, emotional support, symptom questions, and birth preparation. " +
-          "Be warm, reassuring, and evidence-based. Never alarmist. " +
-          "Always recommend consulting a healthcare provider for medical decisions.",
+            content:
+              body.system ??
+              "You are Luna, a warm and knowledgeable pregnancy companion. " +
+                "You help expecting parents with nutrition, emotional support, symptom questions, and birth preparation. " +
+                "Be warm, reassuring, and evidence-based. Never alarmist. " +
+                "Always recommend consulting a healthcare provider for medical decisions.",
           },
           ...body.messages,
         ],
@@ -82,7 +91,10 @@ Deno.serve(async (req) => {
       console.error("Luna AI gateway failed", upstream.status, text);
       return new Response(
         JSON.stringify({ error: "Luna couldn't respond. Please try again." }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        {
+          status: 502,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
       );
     }
 
@@ -90,7 +102,8 @@ Deno.serve(async (req) => {
     return new Response(upstream.body, {
       headers: {
         ...corsHeaders,
-        "Content-Type": upstream.headers.get("content-type") ?? "text/event-stream",
+        "Content-Type":
+          upstream.headers.get("content-type") ?? "text/event-stream",
         "Cache-Control": "no-cache, no-transform",
         "X-Accel-Buffering": "no",
       },
@@ -98,9 +111,9 @@ Deno.serve(async (req) => {
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown";
     console.error("privy-chat error", e);
-    return new Response(
-      JSON.stringify({ error: message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
