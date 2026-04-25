@@ -126,6 +126,45 @@ All colors MUST be HSL.
   .shadow-soft { box-shadow: var(--shadow-soft); }
   .shadow-bubble { box-shadow: var(--shadow-bubble); }
 
+  .gemini-gradient {
+    background: linear-gradient(
+      120deg,
+      hsl(220 95% 65%) 0%,
+      hsl(280 90% 70%) 35%,
+      hsl(330 90% 70%) 65%,
+      hsl(30 95% 65%) 100%
+    );
+  }
+  .gemini-text {
+    background: linear-gradient(
+      120deg,
+      hsl(220 95% 75%) 0%,
+      hsl(280 90% 78%) 50%,
+      hsl(330 90% 78%) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .shimmer-border {
+    position: relative;
+    isolation: isolate;
+  }
+  .shimmer-border::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(120deg, hsl(220 95% 65%), hsl(280 90% 70%), hsl(330 90% 70%), hsl(30 95% 65%));
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+  }
+
   @keyframes pulse-soft {
     0%, 100% { opacity: 0.4; }
     50% { opacity: 1; }
