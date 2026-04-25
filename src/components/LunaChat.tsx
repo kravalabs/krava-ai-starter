@@ -15,6 +15,7 @@ import { toast } from "@/hooks/use-toast";
 import { usePrivy } from "@/hooks/usePrivy";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
+import { Markdown } from "@/components/Markdown";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -200,11 +201,15 @@ function Bubble({
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[85%] rounded-3xl px-5 py-3 shadow-bubble whitespace-pre-wrap leading-relaxed ${
+        className={`max-w-[85%] rounded-3xl px-5 py-3 shadow-bubble leading-relaxed ${
           isUser ? "bubble-user rounded-br-md" : "bubble-luna rounded-bl-md"
         }`}
       >
-        {content}
+        {isUser ? (
+          <p className="whitespace-pre-wrap">{content}</p>
+        ) : (
+          <Markdown variant="onLight">{content}</Markdown>
+        )}
         {streaming && <span className="inline-block ml-1 animate-pulse-soft">▋</span>}
       </div>
     </div>

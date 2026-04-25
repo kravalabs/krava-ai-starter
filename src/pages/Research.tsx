@@ -9,6 +9,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
 import { usePrivy } from "@/hooks/usePrivy";
 import { MoonLogo } from "@/components/MoonLogo";
+import { Markdown } from "@/components/Markdown";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -286,8 +287,8 @@ function ResearchBubble({
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-xs font-medium gemini-text mb-1">Research</p>
-        <div className="rounded-3xl rounded-tl-md bg-card/80 border border-border/60 px-5 py-4 shadow-bubble whitespace-pre-wrap leading-relaxed text-sm">
-          {content}
+        <div className="rounded-3xl rounded-tl-md bg-card/80 border border-border/60 px-5 py-4 shadow-bubble leading-relaxed text-sm">
+          <Markdown>{content}</Markdown>
           {streaming && (
             <span className="inline-block ml-1 animate-pulse-soft">▋</span>
           )}
