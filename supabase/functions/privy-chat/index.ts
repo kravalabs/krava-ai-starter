@@ -70,17 +70,28 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      const reqBody = JSON.stringify({
+        message: lastUser.content,
+        ...(body.chatId ? { chatId: body.chatId } : {}),
+      });
+      console.log("[privy-chat] -> Privy", PRIVY_CHAT_URL,
+        "userToken len:", body.userToken.length,
+        "msg len:", lastUser.content.length,
+        "chatId:", body.chatId ?? "(none)");
+      const t0 = Date.now();
       const privyRes = await fetch(PRIVY_CHAT_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${body.userToken}`,
         },
-        body: JSON.stringify({
-          message: lastUser.content,
-          ...(body.chatId ? { chatId: body.chatId } : {}),
-        }),
+        body: reqBody,
       });
+      const respHeaders: Record<string, string> = {};
+      privyRes.headers.forEach((v, k) => { respHeaders[k] = v; });
+      console.log("[privy-chat] <- Privy status", privyRes.status,
+        "ms:", Date.now() - t0,
+        "headers:", JSON.stringify(respHeaders));
       if (!privyRes.ok || !privyRes.body) {
         const t = await privyRes.text().catch(() => "");
         console.error("Privy chat failed", privyRes.status, t);
@@ -89,7 +100,27 @@ Deno.serve(async (req) => {
           { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
-      return new Response(privyRes.body, {
+      // Tee the stream so we can log every chunk while still forwarding it.
+      const [forward, inspect] = privyRes.body.tee();
+      (async () => {
+        const reader = inspect.getReader();
+        const dec = new TextDecoder();
+        let buf = "";
+        let chunkCount = 0;
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          chunkCount++;
+          const text = dec.decode(value, { stream: true });
+          buf += text;
+          console.log(`[privy-chat] chunk#${chunkCount} (${value.byteLength}B):`,
+            JSON.stringify(text.slice(0, 500)));
+        }
+        console.log("[privy-chat] stream end, total chars:", buf.length,
+          "full body:", JSON.stringify(buf.slice(0, 2000)));
+      })().catch((e) => console.error("[privy-chat] inspect error", e));
+
+      return new Response(forward, {
         headers: {
           ...corsHeaders,
           "Content-Type":
