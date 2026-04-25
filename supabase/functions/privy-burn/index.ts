@@ -7,7 +7,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const PRIVY_BASE_URL = "https://www.privyai.ch";
+const PRIVY_BASE_URL = "https://privyai.ch";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
