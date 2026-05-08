@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Flame, Send, Sparkles, Lock, Bot } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Flame, Send, Lock, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -16,10 +16,11 @@ import { usePrivy, type ChatProvider } from "@/hooks/usePrivy";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
 import { Markdown } from "@/components/Markdown";
+import { APP_NAME, CHAT_GREETING, CHAT_INPUT_PLACEHOLDER } from "@/config";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
-export default function LunaChat() {
+export default function PrivyChat() {
   const navigate = useNavigate();
   const { sendMessage, burnAllData } = usePrivy();
 
@@ -57,7 +58,7 @@ export default function LunaChat() {
     } catch (e) {
       console.error(e);
       toast({
-        title: "Luna couldn't respond",
+        title: `${APP_NAME} couldn't respond`,
         description: e instanceof Error ? e.message : "Please try again.",
         variant: "destructive",
       });
@@ -99,31 +100,9 @@ export default function LunaChat() {
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
         <div className="mx-auto max-w-2xl space-y-4">
           {messages.length === 0 && (
-            <>
-              <div className="rounded-3xl bubble-luna p-6 shadow-bubble">
-                <p className="text-base leading-relaxed">
-                  Hi, I&apos;m Luna 🌙 — your private pregnancy companion. How far along are you?
-                </p>
-              </div>
-              <Link
-                to="/research"
-                className="shimmer-border block rounded-3xl p-[1px] group"
-              >
-                <div className="rounded-[calc(theme(borderRadius.3xl)-1px)] bg-card/80 backdrop-blur p-5 flex items-start gap-4">
-                  <div className="h-10 w-10 rounded-2xl gemini-gradient flex items-center justify-center shrink-0">
-                    <Sparkles className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold">
-                      <span className="gemini-text">Research AI Companion</span>
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                      Cited, evidence-based answers from OpenEvidence, PubMed, ACOG, NICE & more.
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            </>
+            <div className="rounded-3xl bubble-luna p-6 shadow-bubble">
+              <p className="text-base leading-relaxed">{CHAT_GREETING}</p>
+            </div>
           )}
 
           {messages.map((m, i) => (
@@ -165,22 +144,22 @@ export default function LunaChat() {
             </button>
           </div>
           <div className="flex items-end gap-2">
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={onKeyDown}
-            placeholder="Share what's on your mind…"
-            rows={1}
-            className="min-h-[48px] max-h-40 resize-none rounded-2xl bg-card border-border text-foreground placeholder:text-muted-foreground"
-          />
-          <Button
-            onClick={onSend}
-            disabled={!input.trim() || streaming}
-            className="h-12 w-12 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 shrink-0"
-            aria-label="Send"
-          >
-            <Send className="h-5 w-5" />
-          </Button>
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={onKeyDown}
+              placeholder={CHAT_INPUT_PLACEHOLDER}
+              rows={1}
+              className="min-h-[48px] max-h-40 resize-none rounded-2xl bg-card border-border text-foreground placeholder:text-muted-foreground"
+            />
+            <Button
+              onClick={onSend}
+              disabled={!input.trim() || streaming}
+              className="h-12 w-12 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 shrink-0"
+              aria-label="Send"
+            >
+              <Send className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       </div>
@@ -193,7 +172,7 @@ export default function LunaChat() {
               Permanently delete all your data?
             </DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              This will erase every memory and conversation Luna has of you, then sign you out.
+              This will erase every memory and conversation, then sign you out.
               This cannot be undone.
             </DialogDescription>
           </DialogHeader>

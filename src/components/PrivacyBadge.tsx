@@ -7,11 +7,9 @@ export function PrivacyBadge() {
   return (
     <div className="fixed bottom-4 left-4 z-40">
       {open && (
-        <div
-          className="mb-2 max-w-xs rounded-2xl bg-card p-4 text-sm text-card-foreground shadow-soft border border-border"
-        >
+        <div className="mb-2 max-w-xs rounded-2xl bg-card p-4 text-sm text-card-foreground shadow-soft border border-border">
           <p className="leading-relaxed">
-            Your messages are encrypted before they leave your device. Even Luna&apos;s
+            Your messages are encrypted before they leave your device. Even our
             servers cannot read your conversations. Use the 🔥 button anytime to
             permanently delete everything.
           </p>

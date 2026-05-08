@@ -1,10 +1,11 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Sparkles, Flame, LogOut } from "lucide-react";
-import { MoonLogo } from "@/components/MoonLogo";
+import { AppLogo } from "@/components/AppLogo";
 import { Button } from "@/components/ui/button";
 import { usePrivy } from "@/hooks/usePrivy";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { APP_NAME, APP_TAGLINE } from "@/config";
 
 type Props = {
   onBurn?: () => void;
@@ -37,10 +38,10 @@ export function AppHeader({ onBurn }: Props) {
     <header className="sticky top-0 z-30 border-b border-border/60 bg-background/60 backdrop-blur">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         <Link to={authed ? "/chat" : "/"} className="flex items-center gap-2.5 shrink-0">
-          <MoonLogo className="h-8 w-8" />
+          <AppLogo className="h-8 w-8" />
           <div className="leading-tight">
-            <p className="text-base font-semibold">Luna</p>
-            <p className="text-[11px] text-muted-foreground -mt-0.5">Pregnancy companion</p>
+            <p className="text-base font-semibold">{APP_NAME}</p>
+            <p className="text-[11px] text-muted-foreground -mt-0.5">{APP_TAGLINE}</p>
           </div>
         </Link>
 

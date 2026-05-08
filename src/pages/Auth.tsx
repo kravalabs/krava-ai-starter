@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { MoonLogo } from "@/components/MoonLogo";
+import { AppLogo } from "@/components/AppLogo";
+import { APP_NAME } from "@/config";
 
 type Mode = "signin" | "signup";
 
@@ -43,8 +44,6 @@ export default function Auth() {
           options: { emailRedirectTo: `${window.location.origin}/chat` },
         });
         if (error) throw error;
-        // Auto-confirm is on, so the user is signed in immediately.
-        // onAuthStateChange will navigate to /chat.
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -61,10 +60,10 @@ export default function Auth() {
     <main className="relative min-h-screen flex items-center justify-center px-6">
       <div className="w-full max-w-md text-center">
         <div className="flex justify-center mb-8">
-          <MoonLogo className="h-24 w-24 drop-shadow-[0_0_40px_hsl(280_60%_60%/0.4)]" />
+          <AppLogo className="h-24 w-24 drop-shadow-[0_0_40px_hsl(var(--primary)/0.4)]" />
         </div>
         <h1 className="text-4xl font-semibold tracking-tight text-foreground">
-          Your private pregnancy companion
+          {APP_NAME}
         </h1>
         <p className="mt-3 text-muted-foreground">
           Anonymous. Encrypted. Yours alone.
@@ -121,7 +120,6 @@ export default function Auth() {
           Your conversations are end-to-end encrypted. Only you can read them.
         </p>
       </div>
-
     </main>
   );
 }

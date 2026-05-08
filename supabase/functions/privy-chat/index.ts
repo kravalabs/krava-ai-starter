@@ -8,6 +8,17 @@ const corsHeaders = {
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const PRIVY_CHAT_URL = "https://privyai.ch/api/platform/chat";
 
+// ── Customise your AI persona here ─────────────────────────────────────────
+// This prompt is used when the user selects the Gemini provider.
+// The Privy provider uses the system prompt you set on your Privy app via
+// the platform API (POST /api/platform/apps).
+const GEMINI_SYSTEM_PROMPT =
+  Deno.env.get("GEMINI_SYSTEM_PROMPT") ??
+  "You are a helpful, warm, and thoughtful AI companion. " +
+    "Be concise, supportive, and evidence-based where relevant. " +
+    "Always recommend consulting a licensed professional for important decisions.";
+// ───────────────────────────────────────────────────────────────────────────
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -55,7 +66,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ---- Privy provider ----
+    // ── Privy provider (zero-knowledge encrypted) ──────────────────────────
     if (body.provider === "privy") {
       if (!body.userToken) {
         return new Response(JSON.stringify({ error: "Missing Privy userToken" }), {
@@ -74,11 +85,6 @@ Deno.serve(async (req) => {
         message: lastUser.content,
         ...(body.chatId ? { chatId: body.chatId } : {}),
       });
-      console.log("[privy-chat] -> Privy", PRIVY_CHAT_URL,
-        "userToken len:", body.userToken.length,
-        "msg len:", lastUser.content.length,
-        "chatId:", body.chatId ?? "(none)");
-      const t0 = Date.now();
       const privyRes = await fetch(PRIVY_CHAT_URL, {
         method: "POST",
         headers: {
@@ -87,11 +93,6 @@ Deno.serve(async (req) => {
         },
         body: reqBody,
       });
-      const respHeaders: Record<string, string> = {};
-      privyRes.headers.forEach((v, k) => { respHeaders[k] = v; });
-      console.log("[privy-chat] <- Privy status", privyRes.status,
-        "ms:", Date.now() - t0,
-        "headers:", JSON.stringify(respHeaders));
       if (!privyRes.ok || !privyRes.body) {
         const t = await privyRes.text().catch(() => "");
         console.error("Privy chat failed", privyRes.status, t);
@@ -100,24 +101,17 @@ Deno.serve(async (req) => {
           { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
-      // Tee the stream so we can log every chunk while still forwarding it.
       const [forward, inspect] = privyRes.body.tee();
       (async () => {
         const reader = inspect.getReader();
         const dec = new TextDecoder();
         let buf = "";
-        let chunkCount = 0;
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
-          chunkCount++;
-          const text = dec.decode(value, { stream: true });
-          buf += text;
-          console.log(`[privy-chat] chunk#${chunkCount} (${value.byteLength}B):`,
-            JSON.stringify(text.slice(0, 500)));
+          buf += dec.decode(value, { stream: true });
         }
-        console.log("[privy-chat] stream end, total chars:", buf.length,
-          "full body:", JSON.stringify(buf.slice(0, 2000)));
+        console.log("[privy-chat] stream complete, chars:", buf.length);
       })().catch((e) => console.error("[privy-chat] inspect error", e));
 
       return new Response(forward, {
@@ -131,11 +125,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ---- Gemini (default) ----
+    // ── Gemini (default, via Lovable AI gateway) ───────────────────────────
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!lovableApiKey) {
       return new Response(
-        JSON.stringify({ error: "AI gateway is not configured" }),
+        JSON.stringify({ error: "AI gateway is not configured (LOVABLE_API_KEY missing)" }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -152,15 +146,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: body.model ?? "google/gemini-2.5-flash",
         messages: [
-          {
-            role: "system",
-            content:
-              body.system ??
-              "You are Luna, a warm and knowledgeable pregnancy companion. " +
-                "You help expecting parents with nutrition, emotional support, symptom questions, and birth preparation. " +
-                "Be warm, reassuring, and evidence-based. Never alarmist. " +
-                "Always recommend consulting a healthcare provider for medical decisions.",
-          },
+          { role: "system", content: body.system ?? GEMINI_SYSTEM_PROMPT },
           ...body.messages,
         ],
         stream: true,
@@ -169,9 +155,9 @@ Deno.serve(async (req) => {
 
     if (!upstream.ok || !upstream.body) {
       const text = await upstream.text().catch(() => "");
-      console.error("Luna AI gateway failed", upstream.status, text);
+      console.error("Gemini gateway failed", upstream.status, text);
       return new Response(
-        JSON.stringify({ error: "Luna couldn't respond. Please try again." }),
+        JSON.stringify({ error: "AI couldn't respond. Please try again." }),
         {
           status: 502,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -179,7 +165,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Stream the SSE body straight back to the browser.
     return new Response(upstream.body, {
       headers: {
         ...corsHeaders,

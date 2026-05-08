@@ -8,26 +8,11 @@ import { toast } from "@/hooks/use-toast";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
 import { usePrivy } from "@/hooks/usePrivy";
-import { MoonLogo } from "@/components/MoonLogo";
+import { AppLogo } from "@/components/AppLogo";
 import { Markdown } from "@/components/Markdown";
+import { RESEARCH_SUGGESTED, RESEARCH_SOURCES } from "@/config";
 
 type Msg = { role: "user" | "assistant"; content: string };
-
-const SUGGESTED = [
-  "What does the latest evidence say about deli meats in pregnancy?",
-  "Safe caffeine intake per trimester — what do ACOG and NICE recommend?",
-  "Vitamin D supplementation in pregnancy: dose and evidence?",
-  "Group B Strep screening — current guidelines and rationale.",
-];
-
-const TRUSTED_SOURCES = [
-  { name: "OpenEvidence", url: "https://www.openevidence.com" },
-  { name: "PubMed", url: "https://pubmed.ncbi.nlm.nih.gov" },
-  { name: "ACOG", url: "https://www.acog.org" },
-  { name: "NICE", url: "https://www.nice.org.uk" },
-  { name: "Cochrane", url: "https://www.cochranelibrary.com" },
-  { name: "UpToDate", url: "https://www.uptodate.com" },
-];
 
 export default function Research() {
   const navigate = useNavigate();
@@ -143,7 +128,7 @@ export default function Research() {
   if (!ready || !authed) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <MoonLogo className="h-16 w-16 animate-pulse-soft" />
+        <AppLogo className="h-16 w-16 animate-pulse-soft" />
         <p className="text-sm text-muted-foreground">Opening Research…</p>
       </main>
     );
@@ -166,16 +151,15 @@ export default function Research() {
                 <Sparkles className="h-7 w-7 text-white" />
               </div>
               <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">
-                <span className="gemini-text">Research AI Companion</span>
+                <span className="gemini-text">Deep Research</span>
               </h1>
               <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
-                Cited, evidence-based answers about pregnancy. Synthesizes guidance
-                from peer-reviewed and clinical sources. Always confirm with your
-                provider.
+                Cited, evidence-based answers synthesised from reliable sources.
+                Always confirm with a qualified professional.
               </p>
 
               <div className="mt-8 flex flex-wrap justify-center gap-2">
-                {TRUSTED_SOURCES.map((s) => (
+                {RESEARCH_SOURCES.map((s) => (
                   <a
                     key={s.name}
                     href={s.url}
@@ -191,7 +175,7 @@ export default function Research() {
               </div>
 
               <div className="mt-10 grid sm:grid-cols-2 gap-3 text-left">
-                {SUGGESTED.map((q) => (
+                {RESEARCH_SUGGESTED.map((q) => (
                   <button
                     key={q}
                     onClick={() => send(q)}
@@ -236,7 +220,7 @@ export default function Research() {
                     send(input);
                   }
                 }}
-                placeholder="Ask about a symptom, study, or guideline…"
+                placeholder="Ask a research question…"
                 rows={1}
                 className="min-h-[44px] max-h-40 resize-none border-0 bg-transparent text-foreground placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
               />
@@ -251,7 +235,7 @@ export default function Research() {
             </div>
           </div>
           <p className="mt-2 text-[11px] text-muted-foreground text-center">
-            Information only — not medical advice. Always consult your healthcare provider.
+            Information only — not professional advice. Always consult a qualified expert.
           </p>
         </div>
       </div>
@@ -286,7 +270,7 @@ function ResearchBubble({
         <Sparkles className="h-4 w-4 text-white" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium gemini-text mb-1">Research</p>
+        <p className="text-xs font-medium gemini-text mb-1">Deep Research</p>
         <div className="rounded-3xl rounded-tl-md bg-card/80 border border-border/60 px-5 py-4 shadow-bubble leading-relaxed text-sm">
           <Markdown>{content}</Markdown>
           {streaming && (
