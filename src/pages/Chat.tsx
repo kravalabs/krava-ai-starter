@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { usePrivy } from "@/hooks/usePrivy";
-import PrivyChat from "@/components/PrivyChat";
+import { useKrava } from "@/hooks/useKrava";
+import KravaChat from "@/components/KravaChat";
 import { AppLogo } from "@/components/AppLogo";
 
 export default function ChatPage() {
   const navigate = useNavigate();
-  const { ready, authed } = usePrivy();
+  const { ready, authed } = useKrava();
 
   useEffect(() => {
     if (ready && !authed) navigate("/", { replace: true });
@@ -21,5 +21,5 @@ export default function ChatPage() {
     );
   }
 
-  return <PrivyChat />;
+  return <KravaChat />;
 }

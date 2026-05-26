@@ -126,7 +126,7 @@ export default function Landing() {
                   <Sparkles className="h-4 w-4 text-white" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs font-medium gemini-text mb-1">{APP_NAME} · Privy AI</p>
+                  <p className="text-xs font-medium gemini-text mb-1">{APP_NAME} · Krava AI</p>
                   <div className="rounded-3xl rounded-tl-md bg-background/60 border border-border/60 px-4 py-3 text-sm leading-relaxed">
                     Of course — I'm here to help. Your conversation is end-to-end encrypted,
                     so feel free to share whatever's on your mind.

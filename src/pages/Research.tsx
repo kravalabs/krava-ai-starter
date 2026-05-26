@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
-import { usePrivy } from "@/hooks/usePrivy";
+import { useKrava } from "@/hooks/useKrava";
 import { AppLogo } from "@/components/AppLogo";
 import { Markdown } from "@/components/Markdown";
 import { RESEARCH_SUGGESTED, RESEARCH_SOURCES } from "@/config";
@@ -16,7 +16,7 @@ type Msg = { role: "user" | "assistant"; content: string };
 
 export default function Research() {
   const navigate = useNavigate();
-  const { ready, authed } = usePrivy();
+  const { ready, authed } = useKrava();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);

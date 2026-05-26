@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-//  PRIVY AI STARTER — Configuration
+//  KRAVA AI STARTER — Configuration
 //  Edit this file to customise the app for your use case.
 // ─────────────────────────────────────────────────────────────
 
@@ -13,7 +13,7 @@ export const CHAT_GREETING =
 // Placeholder shown in the message input.
 export const CHAT_INPUT_PLACEHOLDER = "Share what's on your mind…";
 
-// System prompt sent to the primary AI model (Privy or Gemini).
+// System prompt sent to the primary AI model (Krava or Gemini).
 // This defines your AI's persona, tone, and scope.
 export const SYSTEM_PROMPT =
   "You are a helpful, warm, and thoughtful AI companion. " +

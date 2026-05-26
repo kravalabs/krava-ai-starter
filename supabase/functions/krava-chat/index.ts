@@ -6,11 +6,11 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const PRIVY_CHAT_URL = "https://privyai.ch/api/platform/chat";
+const KRAVA_CHAT_URL = "https://privyai.ch/api/platform/chat";
 
 // ── Customise your AI persona here ─────────────────────────────────────────
 // This prompt is used when the user selects the Gemini provider.
-// The Privy provider uses the system prompt you set on your Privy app via
+// The Krava provider uses the system prompt you set on your Krava app via
 // the platform API (POST /api/platform/apps).
 const GEMINI_SYSTEM_PROMPT =
   Deno.env.get("GEMINI_SYSTEM_PROMPT") ??
@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
       messages?: Array<{ role: "user" | "assistant"; content: string }>;
       system?: string;
       model?: string;
-      provider?: "gemini" | "privy";
+      provider?: "gemini" | "krava";
       userToken?: string;
       chatId?: string;
     } | null;
@@ -66,10 +66,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ── Privy provider (zero-knowledge encrypted) ──────────────────────────
-    if (body.provider === "privy") {
+    // ── Krava provider (zero-knowledge encrypted) ──────────────────────────
+    if (body.provider === "krava") {
       if (!body.userToken) {
-        return new Response(JSON.stringify({ error: "Missing Privy userToken" }), {
+        return new Response(JSON.stringify({ error: "Missing Krava userToken" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
         message: lastUser.content,
         ...(body.chatId ? { chatId: body.chatId } : {}),
       });
-      const privyRes = await fetch(PRIVY_CHAT_URL, {
+      const kravaRes = await fetch(KRAVA_CHAT_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -93,15 +93,15 @@ Deno.serve(async (req) => {
         },
         body: reqBody,
       });
-      if (!privyRes.ok || !privyRes.body) {
-        const t = await privyRes.text().catch(() => "");
-        console.error("Privy chat failed", privyRes.status, t);
+      if (!kravaRes.ok || !kravaRes.body) {
+        const t = await kravaRes.text().catch(() => "");
+        console.error("Krava chat failed", kravaRes.status, t);
         return new Response(
-          JSON.stringify({ error: "Privy chat failed", status: privyRes.status, body: t }),
+          JSON.stringify({ error: "Krava chat failed", status: kravaRes.status, body: t }),
           { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
-      const [forward, inspect] = privyRes.body.tee();
+      const [forward, inspect] = kravaRes.body.tee();
       (async () => {
         const reader = inspect.getReader();
         const dec = new TextDecoder();
@@ -111,14 +111,14 @@ Deno.serve(async (req) => {
           if (done) break;
           buf += dec.decode(value, { stream: true });
         }
-        console.log("[privy-chat] stream complete, chars:", buf.length);
-      })().catch((e) => console.error("[privy-chat] inspect error", e));
+        console.log("[krava-chat] stream complete, chars:", buf.length);
+      })().catch((e) => console.error("[krava-chat] inspect error", e));
 
       return new Response(forward, {
         headers: {
           ...corsHeaders,
           "Content-Type":
-            privyRes.headers.get("content-type") ?? "text/event-stream",
+            kravaRes.headers.get("content-type") ?? "text/event-stream",
           "Cache-Control": "no-cache, no-transform",
           "X-Accel-Buffering": "no",
         },
@@ -176,7 +176,7 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown";
-    console.error("privy-chat error", e);
+    console.error("krava-chat error", e);
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

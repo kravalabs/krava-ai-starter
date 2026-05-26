@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { usePrivy, type ChatProvider } from "@/hooks/usePrivy";
+import { useKrava, type ChatProvider } from "@/hooks/useKrava";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AppFooter } from "@/components/layout/AppFooter";
 import { Markdown } from "@/components/Markdown";
@@ -20,9 +20,9 @@ import { APP_NAME, CHAT_GREETING, CHAT_INPUT_PLACEHOLDER } from "@/config";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
-export default function PrivyChat() {
+export default function KravaChat() {
   const navigate = useNavigate();
-  const { sendMessage, burnAllData } = usePrivy();
+  const { sendMessage, burnAllData } = useKrava();
 
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -132,15 +132,15 @@ export default function PrivyChat() {
             </button>
             <button
               type="button"
-              onClick={() => setProvider("privy")}
+              onClick={() => setProvider("krava")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition ${
-                provider === "privy"
+                provider === "krava"
                   ? "bg-background shadow-sm text-foreground"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <Lock className="h-3.5 w-3.5" />
-              Privy AI
+              Krava AI
             </button>
           </div>
           <div className="flex items-end gap-2">
