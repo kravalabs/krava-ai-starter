@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Sparkles, Flame, LogOut } from "lucide-react";
 import { AppLogo } from "@/components/AppLogo";
 import { Button } from "@/components/ui/button";
-import { usePrivy } from "@/hooks/usePrivy";
+import { useKrava } from "@/hooks/useKrava";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { APP_NAME, APP_TAGLINE } from "@/config";
@@ -12,7 +12,7 @@ type Props = {
 };
 
 export function AppHeader({ onBurn }: Props) {
-  const { authed } = usePrivy();
+  const { authed } = useKrava();
   const navigate = useNavigate();
   const { pathname } = useLocation();
 

@@ -9,9 +9,9 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
-export type ChatProvider = "gemini" | "privy";
+export type ChatProvider = "gemini" | "krava";
 
-type PrivyContextValue = {
+type KravaContextValue = {
   ready: boolean;
   authed: boolean;
   sendMessage: (
@@ -23,13 +23,13 @@ type PrivyContextValue = {
   burnAllData: () => Promise<void>;
 };
 
-const PrivyContext = createContext<PrivyContextValue | null>(null);
+const KravaContext = createContext<KravaContextValue | null>(null);
 
-export function PrivyProvider({ children }: { children: ReactNode }) {
+export function KravaProvider({ children }: { children: ReactNode }) {
   const [authed, setAuthed] = useState(false);
   const [ready, setReady] = useState(false);
-  const [privyToken, setPrivyToken] = useState<string | null>(null);
-  const [privyChatId, setPrivyChatId] = useState<string | null>(null);
+  const [kravaToken, setKravaToken] = useState<string | null>(null);
+  const [kravaChatId, setKravaChatId] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -60,10 +60,10 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
       const accessToken = session?.access_token;
       if (!accessToken) throw new Error("Not signed in");
 
-      let userToken: string | null = privyToken;
-      if (provider === "privy" && !userToken) {
+      let userToken: string | null = kravaToken;
+      if (provider === "krava" && !userToken) {
         const sessRes = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/privy-session`,
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/krava-session`,
           {
             method: "POST",
             headers: { Authorization: `Bearer ${accessToken}` },
@@ -71,15 +71,15 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
         );
         if (!sessRes.ok) {
           const t = await sessRes.text().catch(() => "");
-          throw new Error(t || "Failed to create Privy session");
+          throw new Error(t || "Failed to create Krava session");
         }
         const j = (await sessRes.json()) as { userToken?: string };
-        if (!j.userToken) throw new Error("Privy session missing userToken");
+        if (!j.userToken) throw new Error("Krava session missing userToken");
         userToken = j.userToken;
-        setPrivyToken(userToken);
+        setKravaToken(userToken);
       }
 
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/privy-chat`;
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/krava-chat`;
       const res = await fetch(url, {
         method: "POST",
         headers: {
@@ -89,8 +89,8 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({
           messages,
           provider,
-          ...(provider === "privy"
-            ? { userToken, chatId: privyChatId ?? undefined }
+          ...(provider === "krava"
+            ? { userToken, chatId: kravaChatId ?? undefined }
             : {}),
         }),
         signal,
@@ -112,8 +112,8 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
         throw new Error(message || `Chat failed (${res.status})`);
       }
 
-      // Parse SSE stream from Privy proxied through our edge function.
-      let privyGotText = false;
+      // Parse SSE stream from Krava proxied through our edge function.
+      let kravaGotText = false;
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
@@ -141,10 +141,10 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
               text?: string;
               chatId?: string;
             };
-            if (provider === "privy") {
-              if (typeof evt.chatId === "string") setPrivyChatId(evt.chatId);
+            if (provider === "krava") {
+              if (typeof evt.chatId === "string") setKravaChatId(evt.chatId);
               if (typeof evt.text === "string") {
-                privyGotText = true;
+                kravaGotText = true;
                 onChunk(evt.text);
               }
               continue;
@@ -166,14 +166,14 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
           }
         }
       }
-      if (provider === "privy" && !privyGotText) {
+      if (provider === "krava" && !kravaGotText) {
         throw new Error(
-          "Privy AI accepted the request but returned no text. " +
-            "This is an upstream issue with privyai.ch — try Gemini instead.",
+          "Krava AI accepted the request but returned no text. " +
+            "This is an upstream issue — try Gemini instead.",
         );
       }
     },
-    [privyToken, privyChatId],
+    [kravaToken, kravaChatId],
   );
 
   const burnAllData = useCallback(async () => {
@@ -184,7 +184,7 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
     if (accessToken) {
       try {
         await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/privy-burn`,
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/krava-burn`,
           {
             method: "POST",
             headers: { Authorization: `Bearer ${accessToken}` },
@@ -195,19 +195,19 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
       }
     }
     await supabase.auth.signOut();
-    setPrivyToken(null);
-    setPrivyChatId(null);
+    setKravaToken(null);
+    setKravaChatId(null);
   }, []);
 
   return (
-    <PrivyContext.Provider value={{ ready, authed, sendMessage, burnAllData }}>
+    <KravaContext.Provider value={{ ready, authed, sendMessage, burnAllData }}>
       {children}
-    </PrivyContext.Provider>
+    </KravaContext.Provider>
   );
 }
 
-export function usePrivy() {
-  const ctx = useContext(PrivyContext);
-  if (!ctx) throw new Error("usePrivy must be used within PrivyProvider");
+export function useKrava() {
+  const ctx = useContext(KravaContext);
+  if (!ctx) throw new Error("useKrava must be used within KravaProvider");
   return ctx;
 }

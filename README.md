@@ -1,10 +1,10 @@
-# Privy AI Starter
+# Krava AI Starter
 
-A production-ready Lovable template for building **private AI companion apps** powered by [Privy AI](https://privyai.ch).
+A production-ready Lovable template for building **private AI companion apps** powered by [Krava AI](https://krava.ai).
 
 Ships with:
 - Chat UI with real-time streaming (SSE)
-- Dual AI backend: **Privy AI** (zero-knowledge encrypted) + **Gemini** (via Lovable gateway)
+- Dual AI backend: **Krava AI** (zero-knowledge encrypted) + **Gemini** (via Lovable gateway)
 - Deep Research mode with cited answers
 - One-tap data burn (delete all memories + sign out)
 - Supabase auth (email + password, magic link ready)
@@ -17,7 +17,7 @@ Ships with:
 | Dependency | Purpose | Free tier? |
 |---|---|---|
 | [Supabase](https://supabase.com) | Auth + database + edge function hosting | Yes |
-| [Privy AI](https://privyai.ch) | Zero-knowledge encrypted AI with memory | Use code `HACKATHON2026` |
+| [Krava AI](https://krava.ai) | Zero-knowledge encrypted AI with memory | Use code `HACKATHON2026` |
 | [Lovable](https://lovable.dev) | AI gateway (Gemini 2.5 Flash) | Yes (workspace credits) |
 
 ---
@@ -31,7 +31,7 @@ Open [lovable.dev](https://lovable.dev) → **Import from GitHub** → paste thi
 Or clone locally:
 
 ```bash
-git clone https://github.com/privyai/privy-ai-starter.git my-app
+git clone https://github.com/krava-ai/krava-ai-starter.git my-app
 cd my-app
 npm install
 ```
@@ -44,10 +44,10 @@ npm install
    - `anon` key → `VITE_SUPABASE_PUBLISHABLE_KEY`
    - Project ID → `VITE_SUPABASE_PROJECT_ID`
 
-### 3. Register your Privy AI app
+### 3. Register your Krava AI app
 
 ```bash
-curl -X POST https://privyai.ch/api/platform/apps \
+curl -X POST https://krava.ai/api/platform/apps \
   -H "Content-Type: application/json" \
   -d '{
     "name": "My App",
@@ -55,9 +55,9 @@ curl -X POST https://privyai.ch/api/platform/apps \
   }'
 ```
 
-Save the returned `appKey` → `PRIVY_APP_KEY`.
+Save the returned `appKey` → `KRAVA_APP_KEY`.
 
-> **Hackathon participants:** use promo code `HACKATHON2026` for 30 days free when signing up at [privyai.ch](https://privyai.ch).
+> **Hackathon participants:** use promo code `HACKATHON2026` for 30 days free when signing up at [krava.ai](https://krava.ai).
 
 ### 4. Set environment variables
 
@@ -73,7 +73,7 @@ Fill in your values:
 VITE_SUPABASE_URL=https://YOUR_PROJECT_ID.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=your_anon_key
 VITE_SUPABASE_PROJECT_ID=your_project_id
-PRIVY_APP_KEY=your_privy_app_key
+KRAVA_APP_KEY=your_krava_app_key
 LOVABLE_API_KEY=your_lovable_api_key
 ```
 
@@ -84,13 +84,13 @@ npx supabase login
 npx supabase link --project-ref YOUR_PROJECT_ID
 
 # Set secrets for the edge functions
-npx supabase secrets set PRIVY_APP_KEY=your_privy_app_key
+npx supabase secrets set KRAVA_APP_KEY=your_krava_app_key
 npx supabase secrets set LOVABLE_API_KEY=your_lovable_api_key
 
 # Deploy all four functions
-npx supabase functions deploy privy-session
-npx supabase functions deploy privy-chat
-npx supabase functions deploy privy-burn
+npx supabase functions deploy krava-session
+npx supabase functions deploy krava-chat
+npx supabase functions deploy krava-burn
 npx supabase functions deploy research
 ```
 
@@ -129,15 +129,15 @@ Update the HTML `<title>` and Open Graph tags in `index.html`.
 ```
 Browser (React + Vite)
   │
-  ├── /chat          → PrivyChat.tsx          (streaming chat UI)
+  ├── /chat          → KravaChat.tsx          (streaming chat UI)
   ├── /research      → Research.tsx           (cited deep research)
   ├── /auth          → Auth.tsx               (Supabase email auth)
   └── /              → Landing.tsx            (marketing page)
 
 Supabase Edge Functions (Deno)
-  ├── privy-session  → exchanges Supabase JWT for Privy userToken
-  ├── privy-chat     → proxies to Privy AI (encrypted) or Gemini
-  ├── privy-burn     → clears Privy memory + signs user out
+  ├── krava-session  → exchanges Supabase JWT for Krava userToken
+  ├── krava-chat     → proxies to Krava AI (encrypted) or Gemini
+  ├── krava-burn     → clears Krava memory + signs user out
   └── research       → streams cited answers via Lovable AI gateway
 ```
 
@@ -145,7 +145,7 @@ Supabase Edge Functions (Deno)
 
 | Provider | Privacy | Model | When to use |
 |---|---|---|---|
-| **Privy AI** | Zero-knowledge encrypted | kimi-k2-5 (hardware-attested) | Sensitive conversations |
+| **Krava AI** | Zero-knowledge encrypted | kimi-k2-5 (hardware-attested) | Sensitive conversations |
 | **Gemini** | Standard | Gemini 2.5 Flash | Fast general answers |
 
 Users switch between them with the toggle in the chat input bar.
@@ -158,7 +158,7 @@ Set these with `npx supabase secrets set KEY=value`:
 
 | Secret | Required | Description |
 |---|---|---|
-| `PRIVY_APP_KEY` | Yes | Your Privy platform app key |
+| `KRAVA_APP_KEY` | Yes | Your Krava AI platform app key |
 | `LOVABLE_API_KEY` | Yes | Lovable AI gateway key (for Gemini) |
 | `GEMINI_SYSTEM_PROMPT` | No | Override the Gemini system prompt at runtime |
 | `RESEARCH_SYSTEM_PROMPT` | No | Override the Research system prompt at runtime |
@@ -167,7 +167,7 @@ Set these with `npx supabase secrets set KEY=value`:
 
 ## Optional: override system prompts at runtime
 
-Both `privy-chat` and `research` edge functions check for environment variable overrides first, so you can change the AI persona without redeploying:
+Both `krava-chat` and `research` edge functions check for environment variable overrides first, so you can change the AI persona without redeploying:
 
 ```bash
 npx supabase secrets set GEMINI_SYSTEM_PROMPT="You are Aria, a wellness coach..."
@@ -196,7 +196,7 @@ Upload `dist/` to your host. Set the `VITE_*` vars in the host's env settings.
 
 ---
 
-## Privy AI platform — what you get
+## Krava AI platform — what you get
 
 When you register an app via `POST /api/platform/apps`:
 
@@ -213,4 +213,4 @@ MIT — build whatever you want.
 
 ---
 
-*Built with [Lovable](https://lovable.dev) · Powered by [Privy AI](https://privyai.ch)*
+*Built with [Lovable](https://lovable.dev) · Powered by [Krava AI](https://krava.ai)*

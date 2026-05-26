@@ -3,7 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { PrivyProvider } from "@/hooks/usePrivy";
+import { KravaProvider } from "@/hooks/useKrava";
 import Auth from "./pages/Auth.tsx";
 import ChatPage from "./pages/Chat.tsx";
 import Research from "./pages/Research.tsx";
@@ -18,7 +18,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <PrivyProvider>
+        <KravaProvider>
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
@@ -27,7 +27,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </PrivyProvider>
+        </KravaProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
