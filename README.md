@@ -1,6 +1,6 @@
 # Krava AI Starter
 
-A production-ready Lovable template for building **private AI companion apps** powered by [Krava AI](https://krava.ai).
+A production-ready Lovable template for building **private AI companion apps** powered by [Krava AI](https://krava.io).
 
 Ships with:
 - Chat UI with real-time streaming (SSE)
@@ -17,7 +17,7 @@ Ships with:
 | Dependency | Purpose | Free tier? |
 |---|---|---|
 | [Supabase](https://supabase.com) | Auth + database + edge function hosting | Yes |
-| [Krava AI](https://krava.ai) | Zero-knowledge encrypted AI with memory | Use code `HACKATHON2026` |
+| [Krava AI](https://krava.io) | Zero-knowledge encrypted AI with memory | Use code `HACKATHON2026` |
 | [Lovable](https://lovable.dev) | AI gateway (Gemini 2.5 Flash) | Yes (workspace credits) |
 
 ---
@@ -47,7 +47,7 @@ npm install
 ### 3. Register your Krava AI app
 
 ```bash
-curl -X POST https://krava.ai/api/platform/apps \
+curl -X POST https://krava.io/api/platform/apps \
   -H "Content-Type: application/json" \
   -d '{
     "name": "My App",
@@ -57,7 +57,7 @@ curl -X POST https://krava.ai/api/platform/apps \
 
 Save the returned `appKey` → `KRAVA_APP_KEY`.
 
-> **Hackathon participants:** use promo code `HACKATHON2026` for 30 days free when signing up at [krava.ai](https://krava.ai).
+> **Hackathon participants:** use promo code `HACKATHON2026` for 30 days free when signing up at [krava.io](https://krava.io).
 
 ### 4. Set environment variables
 
@@ -213,4 +213,4 @@ MIT — build whatever you want.
 
 ---
 
-*Built with [Lovable](https://lovable.dev) · Powered by [Krava AI](https://krava.ai)*
+*Built with [Lovable](https://lovable.dev) · Powered by [Krava AI](https://krava.io)*
