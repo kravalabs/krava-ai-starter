@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import { createPrivyPlatformClient, createPrivyClient } from "npm:@privyai/api-client@0.1.0";
+import { createPrivyPlatformClient, createPrivyClient } from "npm:@kravalabs/api-client@0.1.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
